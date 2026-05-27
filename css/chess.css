@@ -13,7 +13,6 @@
 }
 
 #quickSettingBtns {
-    margin-top: 80vh;
     position: relative;
 
     margin-left: auto;
@@ -32,9 +31,11 @@
 }
 
 #turnMessages {
+    margin-top: 75vh;
     font-size: 5vh;
-    color: aliceblue;
+    color: rgb(0, 0, 0);
     text-align: center;
+    display: block;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 #flip {
@@ -87,3 +88,4 @@
 .c {
     background-color:  rgb(173, 164, 130);
 }
+

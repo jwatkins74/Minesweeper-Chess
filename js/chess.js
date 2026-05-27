@@ -5,109 +5,52 @@ For future note: consider object-oriented approach booo
 
 Thigns to fix/add:
 -Future- Add one player (Ai will be hard to make), Add online?
-
 */
-//------------------------------------------------------------------------------------------------------------------
-//Includes const values 
-const pieces = [["♙", "♟"], ["♖", "♜"], ["♘", "♞"], ["♗", "♝"], ["♕", "♛"], ["♔", "♚"]]
-const whitePieces = ["♙", "♖","♘","♗","♕","♔"];
-const blackPieces = ["♟", "♜","♞","♝","♛","♚"];
 
-const letters = ["a", "b", "c", "d", "e", "f", "g", "h"]
+import {pieces, letters, whitePieces, blackPieces} from './Storage/constants.js';
+import {mineVis, mineColor} from './Storage/debug.js';
+import {enemyColor, emptyColor, clickColor,aColor,bColor} from './Storage/settings.js'
+import { calculateMineScores } from './Logic/bombs.js';
+import {state} from './Logic/state.js'
+import { start } from './Logic/start.js';
 
-const enemyColor = "lightcoral";   // color of tiles where moves do kill
-const emptyColor = "darkseagreen"; // color of tiles where moves don't kill
-const clickColor = "chocolate";    // clicked tile color
-const aColor     = "honeydew";     // A tile colors
-const bColor     = "tan";          // B tile colors
+//setup
+start()
 
-//Prob of mine, each center tile
-let mineProb = 0.35;  
-if (localStorage.getItem("diff") >= 0){
-    mineProb = localStorage.getItem("diff") / 100;
-}
-const mineVis = false;              //For us to test
-const mineColor = "red";           //vis mine color
-//------------------------------------------------------------------------------------------------------------------
-//Player
-let turn = "white";
+// Shows the player's turn
 const msgDisplay = document.getElementById("turnMessages");
-msgDisplay.textContent = `${turn}'s turn.`;
+msgDisplay.textContent = `${state.turn}'s turn.`;
 
-//-------------------------------------------------------------------------------------------------------------------
-//Mines
-//j is vertical
-let bombs = [];
-for (let j = 3; j < 7; j++) {
-    for (let k = 0; k < 8; k++) {
-        if (Math.random() < mineProb) {
-            let s = j + String.fromCharCode("a".charCodeAt(0)+k);
-            if (mineVis) {
-                const bomb = document.getElementById(s);
-                bomb.style.backgroundColor = mineColor;
-            }
-            bombs.push(s)
-        }
-    }
-}
-
+//View Mines
 const viewMines = document.getElementById("viewMines");
 viewMines.onmouseenter =  function(){
-    calNumbers()
+    calculateMineScores()
     mineBoard.style.display = "block";
 };
 viewMines.onmouseleave = function() {
     mineBoard.style.display = "none";
 }
+
 //Board Swapping
 const mineBoard = document.getElementById("mineboard");
 mineBoard.style.display="none";
-/**
- * Calculates numbers for second board
- */
-function calNumbers() {
-    for (let i = 0; i < letters.length; i++) {
-        for (let ii = 1; ii < 9;ii++){
-            const curr2 = document.getElementById(ii + letters[i])
-            if (turn == "white" && whitePieces.includes(curr2.textContent) || turn == "black" && blackPieces.includes(curr2.textContent)) {
-                const sweeper = document.getElementById("" + ii + (i + 1));
-                let num =0;
-                for (let j = -1; j < 2; j++) {
-                    for (let jj = -1; jj < 2; jj++) {
-                        if (i + j > -1 && i+j <  letters.length && ii + jj > 0 && ii+jj <  9) {
-                            if (bombs.includes((ii+ jj) + letters[i + j])) {
-                                num = num + 1;
-                            }
-                        }
-                        
-                    }
-                }
-                sweeper.textContent = num;
-            } else {
-                const sweeper = document.getElementById("" + ii + (i + 1));
-                sweeper.textContent = "";
-            }
-        }
-    }
-    
-}
+
 //-------------------------------------------------------------------------------------------------------------------
-let flipped = false
-let flipOn = true;
+
 const flipButton = document.getElementById("flip");
 flipButton.addEventListener("click", function(event) {
-    flipOn = !flipOn; //toggle flip feature
+    state.flipOn = !state.flipOn; //toggle flip feature
 
-    if (flipOn) {
+    if (state.flipOn) {
         flipButton.textContent = "Flip is on!"
-        if (turn == "black") flip();
-        if (turn == "white") ; //do nothing, since it's already fine
+        if (state.turn == "black") flip();
 
     } else { //when flip is "off", toggle to initial state
         flipButton.textContent = "Flip is off!"
-        if (flipped) flip();
+        if (state.flipped) flip();
     }
 });
+
     /**
  * Function to flip tiles
  * @param {*} piece Piece to be moved
@@ -119,7 +62,7 @@ function flip() {
         for (let ii = 1; ii < 9;ii++){
             const curr = document.getElementById(ii + letters[i])
             const curr3 = document.getElementById(""+ ii + (i+1))
-            if (flipped) {
+            if (state.flipped) {
                 curr.style.transform="rotate(0deg)";
                 curr3.style.transform="rotate(0deg)";
             } else {
@@ -129,71 +72,69 @@ function flip() {
             
         }
     }
-    if (flipped) {
+    if (state.flipped) {
         mineBoard.style.transform = "rotate(0deg)";
         board.style.transform = "rotate(0deg)";
-        flipped = false;
+        state.flipped = false;
     } else {
         mineBoard.style.transform = "rotate(180deg)";
         board.style.transform = "rotate(180deg)";
-        flipped = true;
+        state.flipped = true;
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
 //Board Stuff
 
 const board = document.getElementById("board");
-//Use to check who "owns" a piece
 
 
-let gameOver = false;
-let oldSelected;
+
 board.addEventListener("click", function(event) {
     //If we select board instead of tile, or game is over, do nothing
-    if (event.target == board || gameOver) {
+    if (event.target == board || state.gameOver) {
         return;
     }
 
     //If we click a spot that was a valid move, move the piece (bombs)
     // if (event.target.style.backgroundColor == emptyColor || event.target.style.backgroundColor ==enemyColor) {
     if (avaliableMove(event.target)) {
-        if (!turnflag(oldSelected.textContent)) {
-            alert(`It is ${turn}'s turn!`)
+        if (!turnflag(state.oldSelected.textContent)) {
+            alert(`It is ${state.turn}'s turn!`)
             return;
         }
         //This means we are good to swap!
 
         //swap turn
-        if (turn == "white") {
-            turn = "black";
+        if (state.turn == "white") {
+            state.turn = "black";
         } else {
-            turn = "white";
+            state.turn = "white";
         }
-        msgDisplay.textContent = `${turn}'s turn.`;
+        msgDisplay.textContent = `${state.turn}'s turn.`;
 
         //Blow up if goes to mine
-        if (bombs.includes(event.target.id)){
+        if (state.bombs.includes(event.target.id)){
 
             pieceExplosion(event.target);
 
             //If King blows up
-            if (oldSelected.textContent == pieces[5][0]) {alert("Black Wins!!!"); gameOver = true;}
-            if (oldSelected.textContent == pieces[5][1]) {alert("White Wins!!!"); gameOver = true;}
+            if (state.oldSelected.textContent == pieces[5][0]) {alert("Black Wins!!!"); state.gameOver = true;}
+            if (state.oldSelected.textContent == pieces[5][1]) {alert("White Wins!!!"); state.gameOver = true;}
 
 
-            oldSelected.textContent = "";
-            let index = bombs.findIndex(spot => mine(spot, event.target.id));
-            bombs.splice(index, 1);
+            state.oldSelected.textContent = "";
+            let index = state.bombs.findIndex(spot => mine(spot, event.target.id));
+            state.bombs.splice(index, 1);
             revertColors();
-            if (flipOn) {
+            if (state.flipOn) {
                 flip();
             }
             return
         }
         //Sets new tile character to move piece and remove the old piece
-        let oldpiece = event.target.textContent
-        event.target.textContent = oldSelected.textContent
-        oldSelected.textContent = ""
+        state.oldpiece = event.target.textContent
+        event.target.textContent = state.oldSelected.textContent
+        state.oldSelected.textContent = ""
 
         //Handle Pawn Promotion
         if (event.target.textContent == "♙" && event.target.id[0] == "8"){
@@ -206,20 +147,20 @@ board.addEventListener("click", function(event) {
 
 
         //Check checkmate
-        if (oldpiece == "♔"){
+        if (state.oldpiece == "♔"){
             alert("Black Wins!!!");
-            gameOver = true;
-            if (flipped) {
+            state.gameOver = true;
+            if (state.flipped) {
                 flip();
             }
-        } else if (oldpiece == "♚") {
+        } else if (state.oldpiece == "♚") {
             alert("White Wins!!!");
-            gameOver = true;
-            if (flipped) {
+            state.gameOver = true;
+            if (state.state.flipped) {
                 flip();
             }
         } else {
-            if (flipOn) {
+            if (state.flipOn) {
                 flip();
             }
             
@@ -228,9 +169,8 @@ board.addEventListener("click", function(event) {
     }
 
     revertColors()
-    oldSelected = event.target;
-    let possibleMove;
-    let piece;
+    state.oldSelected = event.target;
+    
 
     //If we select a piece, we want to highlight moves
     highlightMoves(event.target);
@@ -248,40 +188,40 @@ function highlightMoves(spot) {
     let id = spot.id;
     let selectedPiece = spot.textContent;
     if (selectedPiece != ""){
-        oldSelected.style.backgroundColor = clickColor;
+        state.oldSelected.style.backgroundColor = clickColor;
 
         //White
         if ( selectedPiece =="♙") {
             //forward moves
             if (id[0] == 2) {
-                possibleMove = document.getElementById("3" + id[1])
-                if (empty(possibleMove)) {
-                    colorPossibleMoves(possibleMove, "white")
-                    possibleMove = document.getElementById("4" + id[1]);
-                    if (empty(possibleMove)) {
-                        colorPossibleMoves(possibleMove, "white")
+                state.possibleMove = document.getElementById("3" + id[1])
+                if (empty(state.possibleMove)) {
+                    colorpossibleMoves(state.possibleMove, "white")
+                    state.possibleMove = document.getElementById("4" + id[1]);
+                    if (empty(state.possibleMove)) {
+                        colorpossibleMoves(state.possibleMove, "white")
                     }
                 }
             } else {
-                possibleMove = document.getElementById((Number(id[0]) +1) + id[1])
-                if (empty(possibleMove)) {
-                    colorPossibleMoves(possibleMove, "white")
+                state.possibleMove = document.getElementById((Number(id[0]) +1) + id[1])
+                if (empty(state.possibleMove)) {
+                    colorpossibleMoves(state.possibleMove, "white")
                 }
             }
 
             //side attacks
             if (id[1] != "a"){
-                possibleMove = document.getElementById((Number(id[0]) +1) + String.fromCharCode(id[1].charCodeAt(0)-1));
-                piece = possibleMove.textContent;
-                if (blackPieces.includes(piece)) {
-                    possibleMove.style.backgroundColor = enemyColor;
+                state.possibleMove = document.getElementById((Number(id[0]) +1) + String.fromCharCode(id[1].charCodeAt(0)-1));
+                state.piece = state.possibleMove.textContent;
+                if (blackPieces.includes(state.piece)) {
+                    state.possibleMove.style.backgroundColor = enemyColor;
                 }
             }
             if (id[1] != "h"){
-                possibleMove = document.getElementById((Number(id[0]) +1) + String.fromCharCode(id[1].charCodeAt(0)+1));
-                piece = possibleMove.textContent;
-                if (blackPieces.includes(piece)) {
-                    possibleMove.style.backgroundColor = enemyColor;
+                state.possibleMove = document.getElementById((Number(id[0]) +1) + String.fromCharCode(id[1].charCodeAt(0)+1));
+                state.piece = state.possibleMove.textContent;
+                if (blackPieces.includes(state.piece)) {
+                    state.possibleMove.style.backgroundColor = enemyColor;
                 }
             }
         }
@@ -295,20 +235,20 @@ function highlightMoves(spot) {
                 }
                 if (i > 1 || i < -1) {
                     let curr = (Number(id[0]) +i) + String.fromCharCode(id[1].charCodeAt(0)+1);
-                    possibleMove = document.getElementById(curr);
-                    colorPossibleMoves(possibleMove, 'white')
+                    state.possibleMove = document.getElementById(curr);
+                    colorpossibleMoves(state.possibleMove, 'white')
 
                     curr = (Number(id[0]) +i) + String.fromCharCode(id[1].charCodeAt(0)-1);
-                    possibleMove = document.getElementById(curr);
-                    colorPossibleMoves(possibleMove, 'white')
+                    state.possibleMove = document.getElementById(curr);
+                    colorpossibleMoves(state.possibleMove, 'white')
                 } else {
                     let curr = (Number(id[0]) +i) + String.fromCharCode(id[1].charCodeAt(0)+2);
-                    possibleMove = document.getElementById(curr);
-                    colorPossibleMoves(possibleMove, 'white')
+                    state.possibleMove = document.getElementById(curr);
+                    colorpossibleMoves(state.possibleMove, 'white')
 
                     curr = (Number(id[0]) +i) + String.fromCharCode(id[1].charCodeAt(0)-2);
-                    possibleMove = document.getElementById(curr);
-                    colorPossibleMoves(possibleMove, 'white')
+                    state.possibleMove = document.getElementById(curr);
+                    colorpossibleMoves(state.possibleMove, 'white')
                 }
 
             }
@@ -327,34 +267,34 @@ function highlightMoves(spot) {
         //Black
         if (selectedPiece == "♟") {
             if (id[0] == 7) {
-                possibleMove = document.getElementById("6" + id[1])
-                if (empty(possibleMove)) {
-                    possibleMove.style.backgroundColor = emptyColor;
-                    possibleMove = document.getElementById("5" + id[1]);
-                    if (empty(possibleMove)) {
-                        possibleMove.style.backgroundColor = emptyColor;
+                state.possibleMove = document.getElementById("6" + id[1])
+                if (empty(state.possibleMove)) {
+                    state.possibleMove.style.backgroundColor = emptyColor;
+                    state.possibleMove = document.getElementById("5" + id[1]);
+                    if (empty(state.possibleMove)) {
+                        state.possibleMove.style.backgroundColor = emptyColor;
                     }
                 }
             } else {
-                possibleMove = document.getElementById((Number(id[0]) -1) + id[1])
-                if (empty(possibleMove)) {
-                    possibleMove.style.backgroundColor = emptyColor;
+                state.possibleMove = document.getElementById((Number(id[0]) -1) + id[1])
+                if (empty(state.possibleMove)) {
+                    state.possibleMove.style.backgroundColor = emptyColor;
                 }
             }
 
             //side attacks
             if (id[1] != "a"){
-                possibleMove = document.getElementById((Number(id[0]) -1) + String.fromCharCode(id[1].charCodeAt(0)-1));
-                piece = possibleMove.textContent;
-                if (whitePieces.includes(piece)) {
-                    possibleMove.style.backgroundColor = enemyColor;
+                state.possibleMove = document.getElementById((Number(id[0]) -1) + String.fromCharCode(id[1].charCodeAt(0)-1));
+                state.piece = state.possibleMove.textContent;
+                if (whitePieces.includes(state.piece)) {
+                    state.possibleMove.style.backgroundColor = enemyColor;
                 }
             }
             if (id[1] != "h"){
-                possibleMove = document.getElementById((Number(id[0]) -1) + String.fromCharCode(id[1].charCodeAt(0)+1));
-                piece = possibleMove.textContent;
-                if (whitePieces.includes(piece)) {
-                    possibleMove.style.backgroundColor = enemyColor;
+                state.possibleMove = document.getElementById((Number(id[0]) -1) + String.fromCharCode(id[1].charCodeAt(0)+1));
+                state.piece = state.possibleMove.textContent;
+                if (whitePieces.includes(state.piece)) {
+                    state.possibleMove.style.backgroundColor = enemyColor;
                 }
             }
         }
@@ -368,20 +308,20 @@ function highlightMoves(spot) {
                 }
                 if (i > 1 || i < -1) {
                     let curr = (Number(id[0]) +i) + String.fromCharCode(id[1].charCodeAt(0)+1);
-                    possibleMove = document.getElementById(curr);
-                    colorPossibleMoves(possibleMove, 'black')
+                    state.possibleMove = document.getElementById(curr);
+                    colorpossibleMoves(state.possibleMove, 'black')
 
                     curr = (Number(id[0]) +i) + String.fromCharCode(id[1].charCodeAt(0)-1);
-                    possibleMove = document.getElementById(curr);
-                    colorPossibleMoves(possibleMove, 'black')
+                    state.possibleMove = document.getElementById(curr);
+                    colorpossibleMoves(state.possibleMove, 'black')
                 } else {
                     let curr = (Number(id[0]) +i) + String.fromCharCode(id[1].charCodeAt(0)+2);
-                    possibleMove = document.getElementById(curr);
-                    colorPossibleMoves(possibleMove, 'black')
+                    state.possibleMove = document.getElementById(curr);
+                    colorpossibleMoves(state.possibleMove, 'black')
 
                     curr = (Number(id[0]) +i) + String.fromCharCode(id[1].charCodeAt(0)-2);
-                    possibleMove = document.getElementById(curr);
-                    colorPossibleMoves(possibleMove, 'black')
+                    state.possibleMove = document.getElementById(curr);
+                    colorpossibleMoves(state.possibleMove, 'black')
                 }
 
             }
@@ -415,10 +355,10 @@ function allDirections(spot, team, directions, slow) {
         let nextPost = (Number(spot[0]) + vertDirection)+ String.fromCharCode(spot[1].charCodeAt(0)+horDirection);
         let nextEle = document.getElementById(nextPost);
         if (slow) {
-            colorPossibleMoves(nextEle, team);
+            colorpossibleMoves(nextEle, team);
             
         } else {
-            while (colorPossibleMoves(nextEle, team)) {
+            while (colorpossibleMoves(nextEle, team)) {
                 nextPost = (Number(nextPost[0]) + vertDirection)+ String.fromCharCode(nextPost[1].charCodeAt(0)+horDirection);
                 nextEle = document.getElementById(nextPost);
             } 
@@ -434,7 +374,7 @@ function allDirections(spot, team, directions, slow) {
  * @returns Whether the piece would be able to move further in that direction. If false, then the piece 
  * will continue checking further spots in that direction to see if they are valid moves.
  */
-function colorPossibleMoves(spot, team) {
+function colorpossibleMoves(spot, team) {
     if (!spot) {
         return false;
     }
@@ -457,7 +397,7 @@ function revertColors() {
     for (let i = 0; i < letters.length; i++) {
         for (let ii = 1; ii < 9;ii++){
             const curr = document.getElementById(ii + letters[i])
-                if (mineVis && bombs.includes(curr.id)) {
+                if (mineVis && state.bombs.includes(curr.id)) {
                     curr.style.backgroundColor = mineColor;
                 }else if (curr.className == "a") {
                     curr.style.backgroundColor = aColor;
@@ -495,9 +435,9 @@ function mine(spot, target) {
  * @returns If move is valid.
  */
 function turnflag(piece) {
-    if (turn == "white" && whitePieces.includes(piece)) {
+    if (state.turn == "white" && whitePieces.includes(piece)) {
         return true;
-    }else if (turn == "black" && blackPieces.includes(piece)) {
+    }else if (state.turn == "black" && blackPieces.includes(piece)) {
         return true;
     }
     return false;
@@ -532,7 +472,7 @@ function promotePawn(team) {
 function pieceExplosion(chessPiece) {
     var id = null;
     clearInterval(id) //stop any current animations
-    timer = 0;
+    let timer = 0;
     length = 50;
     id = setInterval(explodeTile, 35); //animate the frame shaking
     function explodeTile() {
