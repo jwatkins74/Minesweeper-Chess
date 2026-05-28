@@ -13,6 +13,10 @@ import {enemyColor, emptyColor, clickColor,aColor,bColor} from './Storage/settin
 import { calculateMineScores } from './Logic/bombs.js';
 import {state} from './Logic/state.js'
 import { start } from './Logic/start.js';
+import { lettersToNumbers } from './Logic/board.js';
+import { bishopMove, kingMove, knightMove, pawnMove, queenMove, rookMove } from './Logic/moves.js';
+import { colorpossibleMoves } from './Logic/coloring.js';
+import { highlightSquares } from './UI/boardColors.js';
 
 //setup
 start()
@@ -95,6 +99,7 @@ board.addEventListener("click", function(event) {
         return;
     }
 
+
     //If we click a spot that was a valid move, move the piece (bombs)
     // if (event.target.style.backgroundColor == emptyColor || event.target.style.backgroundColor ==enemyColor) {
     if (avaliableMove(event.target)) {
@@ -168,7 +173,7 @@ board.addEventListener("click", function(event) {
         return;
     }
 
-    revertColors()
+    //revertColors()
     state.oldSelected = event.target;
     
 
@@ -185,237 +190,40 @@ function highlightMoves(spot) {
     if (!spot) {
         return;
     }
-    let id = spot.id;
-    let selectedPiece = spot.textContent;
-    if (selectedPiece != ""){
-        state.oldSelected.style.backgroundColor = clickColor;
+    let square = converttoLogicArr(lettersToNumbers(spot.id));
 
-        //White
-        if ( selectedPiece =="♙") {
-            //forward moves
-            if (id[0] == 2) {
-                state.possibleMove = document.getElementById("3" + id[1])
-                if (empty(state.possibleMove)) {
-                    colorpossibleMoves(state.possibleMove, "white")
-                    state.possibleMove = document.getElementById("4" + id[1]);
-                    if (empty(state.possibleMove)) {
-                        colorpossibleMoves(state.possibleMove, "white")
-                    }
-                }
-            } else {
-                state.possibleMove = document.getElementById((Number(id[0]) +1) + id[1])
-                if (empty(state.possibleMove)) {
-                    colorpossibleMoves(state.possibleMove, "white")
-                }
-            }
-
-            //side attacks
-            if (id[1] != "a"){
-                state.possibleMove = document.getElementById((Number(id[0]) +1) + String.fromCharCode(id[1].charCodeAt(0)-1));
-                state.piece = state.possibleMove.textContent;
-                if (blackPieces.includes(state.piece)) {
-                    state.possibleMove.style.backgroundColor = enemyColor;
-                }
-            }
-            if (id[1] != "h"){
-                state.possibleMove = document.getElementById((Number(id[0]) +1) + String.fromCharCode(id[1].charCodeAt(0)+1));
-                state.piece = state.possibleMove.textContent;
-                if (blackPieces.includes(state.piece)) {
-                    state.possibleMove.style.backgroundColor = enemyColor;
-                }
-            }
-        }
-        if ( selectedPiece =="♖") {
-            allDirections(id, "white", [[1,0],[-1,0],[0,1],[0,-1]], false);
-        }
-        if ( selectedPiece =="♘") {
-            for (let i = -2; i < 3; i++) {
-                if (i==0){
-                    continue;
-                }
-                if (i > 1 || i < -1) {
-                    let curr = (Number(id[0]) +i) + String.fromCharCode(id[1].charCodeAt(0)+1);
-                    state.possibleMove = document.getElementById(curr);
-                    colorpossibleMoves(state.possibleMove, 'white')
-
-                    curr = (Number(id[0]) +i) + String.fromCharCode(id[1].charCodeAt(0)-1);
-                    state.possibleMove = document.getElementById(curr);
-                    colorpossibleMoves(state.possibleMove, 'white')
-                } else {
-                    let curr = (Number(id[0]) +i) + String.fromCharCode(id[1].charCodeAt(0)+2);
-                    state.possibleMove = document.getElementById(curr);
-                    colorpossibleMoves(state.possibleMove, 'white')
-
-                    curr = (Number(id[0]) +i) + String.fromCharCode(id[1].charCodeAt(0)-2);
-                    state.possibleMove = document.getElementById(curr);
-                    colorpossibleMoves(state.possibleMove, 'white')
-                }
-
-            }
-        }
-        if ( selectedPiece =="♗") {
-            allDirections(id, "white", [[1,1],[-1,1],[1,-1],[-1,-1]], false);
-        }
-        if ( selectedPiece =="♕") {
-            allDirections(id, "white", [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]], false);
-        }
-        if ( selectedPiece =="♔") {
-            allDirections(id, "white", [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]], true);
-        }
-
-
-        //Black
-        if (selectedPiece == "♟") {
-            if (id[0] == 7) {
-                state.possibleMove = document.getElementById("6" + id[1])
-                if (empty(state.possibleMove)) {
-                    state.possibleMove.style.backgroundColor = emptyColor;
-                    state.possibleMove = document.getElementById("5" + id[1]);
-                    if (empty(state.possibleMove)) {
-                        state.possibleMove.style.backgroundColor = emptyColor;
-                    }
-                }
-            } else {
-                state.possibleMove = document.getElementById((Number(id[0]) -1) + id[1])
-                if (empty(state.possibleMove)) {
-                    state.possibleMove.style.backgroundColor = emptyColor;
-                }
-            }
-
-            //side attacks
-            if (id[1] != "a"){
-                state.possibleMove = document.getElementById((Number(id[0]) -1) + String.fromCharCode(id[1].charCodeAt(0)-1));
-                state.piece = state.possibleMove.textContent;
-                if (whitePieces.includes(state.piece)) {
-                    state.possibleMove.style.backgroundColor = enemyColor;
-                }
-            }
-            if (id[1] != "h"){
-                state.possibleMove = document.getElementById((Number(id[0]) -1) + String.fromCharCode(id[1].charCodeAt(0)+1));
-                state.piece = state.possibleMove.textContent;
-                if (whitePieces.includes(state.piece)) {
-                    state.possibleMove.style.backgroundColor = enemyColor;
-                }
-            }
-        }
-        if (selectedPiece == "♜") {
-            allDirections(id, "black", [[1,0],[-1,0],[0,1],[0,-1]], false);
-        }
-        if (selectedPiece == "♞") {
-            for (let i = -2; i < 3; i++) {
-                if (i==0){
-                    continue;
-                }
-                if (i > 1 || i < -1) {
-                    let curr = (Number(id[0]) +i) + String.fromCharCode(id[1].charCodeAt(0)+1);
-                    state.possibleMove = document.getElementById(curr);
-                    colorpossibleMoves(state.possibleMove, 'black')
-
-                    curr = (Number(id[0]) +i) + String.fromCharCode(id[1].charCodeAt(0)-1);
-                    state.possibleMove = document.getElementById(curr);
-                    colorpossibleMoves(state.possibleMove, 'black')
-                } else {
-                    let curr = (Number(id[0]) +i) + String.fromCharCode(id[1].charCodeAt(0)+2);
-                    state.possibleMove = document.getElementById(curr);
-                    colorpossibleMoves(state.possibleMove, 'black')
-
-                    curr = (Number(id[0]) +i) + String.fromCharCode(id[1].charCodeAt(0)-2);
-                    state.possibleMove = document.getElementById(curr);
-                    colorpossibleMoves(state.possibleMove, 'black')
-                }
-
-            }
-        }
-        if (selectedPiece == "♝") {
-            allDirections(id, "black", [[1,1],[-1,1],[1,-1],[-1,-1]], false);
-        }
-        if (selectedPiece == "♛") {
-            allDirections(id, "black", [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]], false);
-        }
-        if (selectedPiece == "♚") {
-            allDirections(id, "black", [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]], true);
-        }
+    let piece = state.board[square[0]][square[1]];
+    let team = piece.team;
+    let spaces = [];
+    switch (piece.piece) {
+        case "king":
+            spaces = kingMove(square, team);
+            break;
+        case "queen":
+            spaces = queenMove(square, team);
+            break;
+        case "pawn":
+            spaces = pawnMove(square, team);
+            break;
+        case "knight":
+            spaces = knightMove(square, team);
+            break;
+        case "bishop":
+            spaces = bishopMove(square, team);
+            break;
+        case "rook":
+            spaces = rookMove(square, team);
+            break;
     }
+    highlightSquares(spaces);
     
 }
-/**
- * This uses colorMove to highlight all tiles for a piece given its directions, doesnt work for knight or pawn 
- * @param {string} spot The current location of the piece
- * @param {string} team The team of the chessboard TODO: We can just have black passed in depending on the piece instead of manual input
- * @param {number[][]} directions The Directions,[move1:[vertical,horizontal],move2...[]] ex: [[0,1],[-1,1]] -> piece can only move right and down-right 
- * @param {boolean} slow - tue means piece can only move one in the direction
- */
-function allDirections(spot, team, directions, slow) {
-    if (!spot) {
-        return;
-    }
-    for (let i = 0; i < directions.length; i++) {
-        let vertDirection = directions[i][0];
-        let horDirection = directions[i][1];
-        let nextPost = (Number(spot[0]) + vertDirection)+ String.fromCharCode(spot[1].charCodeAt(0)+horDirection);
-        let nextEle = document.getElementById(nextPost);
-        if (slow) {
-            colorpossibleMoves(nextEle, team);
-            
-        } else {
-            while (colorpossibleMoves(nextEle, team)) {
-                nextPost = (Number(nextPost[0]) + vertDirection)+ String.fromCharCode(nextPost[1].charCodeAt(0)+horDirection);
-                nextEle = document.getElementById(nextPost);
-            } 
-        }
-    }
-    
+function converttoLogicArr(pos) {
+    return [8 - pos[0], pos[1]]
+
 }
 
-/**
- * This colors all possible moves for a piece after clicking on it.
- * @param {*} spot The current place on the board we're checking
- * @param {*} team The team of the chessboard TODO: We can just have black passed in depending on the piece instead of manual input
- * @returns Whether the piece would be able to move further in that direction. If false, then the piece 
- * will continue checking further spots in that direction to see if they are valid moves.
- */
-function colorpossibleMoves(spot, team) {
-    if (!spot) {
-        return false;
-    }
-    if (empty(spot)) {
-        spot.style.backgroundColor = emptyColor;
-        return true;
-    }
-    else if (team == "black" && whitePieces.includes(spot.textContent)) {
-        spot.style.backgroundColor = enemyColor;
-    }
-    else if (team == "white" && blackPieces.includes(spot.textContent)) {
-        spot.style.backgroundColor = enemyColor;
-    }
-    return false;
-}
-/**
- * This changes back the color of all tiles
- */
-function revertColors() {
-    for (let i = 0; i < letters.length; i++) {
-        for (let ii = 1; ii < 9;ii++){
-            const curr = document.getElementById(ii + letters[i])
-                if (mineVis && state.bombs.includes(curr.id)) {
-                    curr.style.backgroundColor = mineColor;
-                }else if (curr.className == "a") {
-                    curr.style.backgroundColor = aColor;
-                } else {
-                    curr.style.backgroundColor = bColor;
-                }
-        }
-    }
-}
 
-/**
- * Checks if tile is empty
- * @param {*} spot The current place on the board we're checking
- * @returns True if spot is empty, false else.
- */
-function empty(spot) {
-    return spot.textContent.length == 0 && spot != null;
-}
 
 function avaliableMove(spot) {
     return spot.style.backgroundColor == emptyColor || spot.style.backgroundColor == enemyColor;
@@ -488,4 +296,22 @@ function pieceExplosion(chessPiece) {
         timer++;
     } 
     avaliableMove(chessPiece);
+}
+
+/**
+ * This changes back the color of all tiles
+ */
+function revertColors() {
+    for (let i = 0; i < letters.length; i++) {
+        for (let ii = 1; ii < 9;ii++){
+            const curr = document.getElementById(ii + letters[i])
+                if (mineVis && state.bombs.includes(curr.id)) {
+                    curr.style.backgroundColor = mineColor;
+                }else if (curr.className == "a") {
+                    curr.style.backgroundColor = aColor;
+                } else {
+                    curr.style.backgroundColor = bColor;
+                }
+        }
+    }
 }

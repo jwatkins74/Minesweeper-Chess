@@ -3,13 +3,17 @@ import {mineProb} from '../Storage/settings.js'
 import { state } from './state.js';
 import { letters, whitePieces, blackPieces } from '../Storage/constants.js';
 
+export class Bomb {
+    constructor() {
+        this.type = "bomb";
+    }
+}
 
 export function makeBombs(){
-    for (let row = 3; row < 7; row++) {
+    for (let row = 3; row <= 6; row++) {
         for (let column = 0; column < 8; column++) {
             if (Math.random() < mineProb) {
-                let square = row + String.fromCharCode("a".charCodeAt(0)+column);
-                state.bombs.push(square)
+                state.board[row][column] = new Bomb()
             }
         }
     }

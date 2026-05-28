@@ -16,7 +16,9 @@ possibleMove:null,
 piece:null,
 
 //Bombs
-bombs: []
+bombs: [],
 
+//Board
+board: [],
 };
 
